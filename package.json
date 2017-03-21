@@ -1,0 +1,24 @@
+{
+  "name": "quantified-self-engine",
+  "version": "1.0.0",
+  "description": "Backend API for the quantified self calorie tracker",
+  "main": "server.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tmikeschu/quantified-self-engine.git"
+  },
+  "keywords": [
+    "express",
+    "api",
+    "crud"
+  ],
+  "author": "Mike Schutte",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tmikeschu/quantified-self-engine/issues"
+  },
+  "homepage": "https://github.com/tmikeschu/quantified-self-engine#readme"
+}
