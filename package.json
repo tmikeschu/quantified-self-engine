@@ -4,7 +4,8 @@
   "description": "Backend API for the quantified self calorie tracker",
   "main": "server.js",
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "start": "nodemon server.js"
   },
   "repository": {
     "type": "git",
@@ -20,5 +21,16 @@
   "bugs": {
     "url": "https://github.com/tmikeschu/quantified-self-engine/issues"
   },
-  "homepage": "https://github.com/tmikeschu/quantified-self-engine#readme"
+  "homepage": "https://github.com/tmikeschu/quantified-self-engine#readme",
+  "devDependencies": {
+    "nodemon": "^1.11.0",
+    "request": "^2.81.0"
+  },
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "dotenv": "^4.0.0",
+    "express": "^4.15.2",
+    "path": "^0.12.7",
+    "pug": "^2.0.0-beta11"
+  }
 }

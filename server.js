@@ -1,0 +1,78 @@
+const express = require('express');
+const app = express();
+const bodyParser = require('body-parser');
+const path = require('path');
+
+
+app.set('port', process.env.PORT || 3000);
+app.set('view engine', 'pug');
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.locals.title = 'Quantified Self';
+app.locals.foods = [];
+
+app.get('/', (request, response) => {
+  response.render('index');
+});
+
+app.get('/foods', (request, response) => {
+  response.json(app.locals.foods);
+});
+
+app.post('/foods', (request, response) => {
+  const food = request.body.food;
+  if (!food) { return response.sendStatus(400) }
+
+  app.locals.foods.push(food);
+  const foodId = app.locals.foods.length - 1;
+
+  response.redirect(`/foods/${foodId}`);
+});
+
+app.get('/foods/:id', (request, response) => {
+  const id = request.params.id;
+  const food = app.locals.foods[id];
+
+  if (!food) { return response.sendStatus(404); }
+  response.json(food);
+});
+
+app.patch('/foods/:id', (request, response) => {
+  const id = request.params.id;
+  const dbFood = app.locals.foods[id];
+  const requestFood = request.body.food;
+
+  if (!dbFood) { return response.sendStatus(404) }
+  if (!requestFood) { return response.sendStatus(400) }
+
+  Object.keys(requestFood).forEach(attr => {
+    dbFood[attr] = requestFood[attr]
+  });
+  response.redirect(`/foods/${id}`);
+});
+
+app.delete('/foods/:id', (request, response) => {
+  const id = request.params.id;
+  const food = app.locals.foods[id];
+
+  if (!food) { return response.sendStatus(404); }
+
+  app.locals.foods[id] = null;
+  response.redirect(202, '/foods');
+});
+
+app.locals.routes = app._router.stack
+                      .map(layer => layer.route)
+                      .filter(route => route !== undefined)
+                      .map(route => route.path);
+
+if (!module.parent) {
+  app.listen(app.get('port'), () =>{
+    console.log(`${app.locals.title} is running on ${app.get('port')}`);
+  });
+}
+
+module.exports = app;
+
