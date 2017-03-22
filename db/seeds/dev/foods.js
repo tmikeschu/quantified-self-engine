@@ -1,4 +1,3 @@
-
 exports.seed = (knex, Promise) => {
   return knex.raw(`TRUNCATE foods RESTART IDENTITY`)
   .then(() => {
