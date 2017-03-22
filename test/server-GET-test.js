@@ -29,7 +29,15 @@ describe('Server', () => {
       `INSERT INTO foods (name, calories, created_at, updated_at)
       VALUES (?, ?, ?, ?)`,
       [foods[0].name, foods[0].calories, new Date(), new Date()]
-    ).then(() => done());
+    ).then(database.raw(
+        `INSERT INTO foods (name, calories, created_at, updated_at)
+        VALUES (?, ?, ?, ?)`,
+        [foods[1].name, foods[1].calories, new Date(), new Date()]
+    ).then(database.raw(
+        `INSERT INTO foods (name, calories, created_at, updated_at)
+        VALUES (?, ?, ?, ?)`,
+        [foods[2].name, foods[2].calories, new Date(), new Date()]
+    ).then(() => done())));
   });
 
   afterEach(done => {
@@ -78,7 +86,7 @@ describe('Server', () => {
         if (error) { done(error); }
 
         const foods = JSON.parse(response.body);
-        const food = foods[Object.keys(foods)[0]];
+        const food = foods[0];
 
         const id = dbFoods[0].id;
         const name = dbFoods[0].name;
