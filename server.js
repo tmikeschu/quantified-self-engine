@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const path = require('path');
+const environment = process.env.NODE_ENV || 'development';
+const configuration = require('./knexfile')[environment];
+const database = require('knex')(configuration);
 
 app.set('port', process.env.PORT || 3000);
 app.set('view engine', 'pug');
@@ -17,7 +20,11 @@ app.get('/', (request, response) => {
 });
 
 app.get('/api/v1/foods', (request, response) => {
-  response.json(app.locals.foods);
+  database('foods').select()
+  .then(foods => {
+    response.json(foods);
+  })
+  .catch(error => console.error(`DB problem: ${error}`));
 });
 
 app.post('/api/v1/foods', (request, response) => {

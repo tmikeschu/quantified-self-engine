@@ -24,14 +24,12 @@ describe('Server', () => {
   });
 
   beforeEach(done => {
-    Object.keys(fixtures.foods).forEach(food => {
-      database.raw(
-        `INSERT INTO foods (name, calories, created_at, updated_at)
-        VALUES (?, ?, ?, ?)`,
-        [food.name, food.calories, new Date(), new Date()]
-      );
-    });
-    done();
+    const foods = fixtures.foods.filter(food => food !== null);
+    database.raw(
+      `INSERT INTO foods (name, calories, created_at, updated_at)
+      VALUES (?, ?, ?, ?)`,
+      [foods[0].name, foods[0].calories, new Date(), new Date()]
+    ).then(() => done());
   });
 
   afterEach(done => {
@@ -44,7 +42,7 @@ describe('Server', () => {
   });
 
   describe('GET /', () => {
-    it('returns the title and available routes', (done) => {
+    it('returns the title and available routes', done => {
       const routes = app._router.stack
                       .map(layer => layer.route)
                       .filter(route => route !== undefined)
@@ -68,15 +66,27 @@ describe('Server', () => {
       app.locals.foods = fixtures.foods
     });
 
-    it('returns all foods', (done) =>{
-      const foods = app.locals.foods;
+    it('returns all foods', done =>{
+      let dbFoods;
+      database('foods').select()
+      .then(foods => {
+        dbFoods = foods;
+      })
+      .catch(error => console.error(`DB problem: ${error}`));
 
       this.request.get('/foods', (error, response) => {
         if (error) { done(error); }
-        assert(
-          response.body.includes(JSON.stringify(foods)),
-          `${JSON.stringify(foods)} not found in ${response.body}`
-        );
+
+        const foods = JSON.parse(response.body);
+        const food = foods[Object.keys(foods)[0]];
+
+        const id = dbFoods[0].id;
+        const name = dbFoods[0].name;
+        const calories = dbFoods[0].calories;
+
+        assert.equal(food.id, id);
+        assert.equal(food.name, name);
+        assert.equal(food.calories, calories);
         done();
       });
     });
@@ -90,8 +100,8 @@ describe('Server', () => {
       app.locals.foods = foods;
     });
 
-    it('returns the specific food', (done) =>{
-      const food = foods.filter((food) => food !== null)[0];
+    it('returns the specific food', done =>{
+      const food = foods.filter(food => food !== null)[0];
       const foodId = foods.indexOf(food);
 
       this.request.get(`/foods/${foodId}`, (error, response) => {
@@ -104,7 +114,7 @@ describe('Server', () => {
       });
     });
 
-    it('returns a 404 if id not found', (done) => {
+    it('returns a 404 if id not found', done => {
       const foodId = 3;
 
       this.request.get(`/foods/${foodId}`, (error, response) => {
