@@ -12,7 +12,7 @@ describe('Server', () => {
     });
 
     this.request = request.defaults({
-      baseUrl: `http://localhost:${process.env.TEST_PORT}`
+      baseUrl: `http://localhost:${process.env.TEST_PORT}/api/v1`
     });
   });
 

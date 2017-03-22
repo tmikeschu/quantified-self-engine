@@ -13,6 +13,10 @@ describe('Server', () => {
     });
 
     this.request = request.defaults({
+      baseUrl: `http://localhost:${process.env.TEST_PORT}/api/v1`
+    });
+
+    this.rootRequest = request.defaults({
       baseUrl: `http://localhost:${process.env.TEST_PORT}`
     });
   });
@@ -26,9 +30,9 @@ describe('Server', () => {
       const routes = app._router.stack
                       .map(layer => layer.route)
                       .filter(route => route !== undefined)
-                      .map(route => route.path)
+                      .map(route => route.path);
 
-      this.request.get('/', (error, response) => {
+      this.rootRequest.get('/', (error, response) => {
         if (error) { done(error); }
         assert.equal(response.statusCode, 200);
         assert(
