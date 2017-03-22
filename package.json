@@ -4,8 +4,9 @@
   "description": "Backend API for the quantified self calorie tracker",
   "main": "server.js",
   "scripts": {
-    "test": "mocha",
-    "start": "nodemon server.js"
+    "test": "NODE_ENV=test mocha test/*-test.js",
+    "start": "nodemon server.js",
+    "debug": "NODE_ENV=test mocha debug test/*-test.js"
   },
   "repository": {
     "type": "git",
@@ -30,7 +31,9 @@
     "body-parser": "^1.17.1",
     "dotenv": "^4.0.0",
     "express": "^4.15.2",
+    "knex": "^0.12.8",
     "path": "^0.12.7",
+    "pg": "^6.1.5",
     "pug": "^2.0.0-beta11"
   }
 }
