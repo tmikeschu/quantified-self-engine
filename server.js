@@ -20,9 +20,9 @@ app.get('/', (request, response) => {
 });
 
 app.get('/api/v1/foods', (request, response) => {
-  database('foods').select()
+  database.raw('SELECT * FROM foods')
   .then(foods => {
-    response.json(foods);
+    response.json(foods.rows);
   })
   .catch(error => console.error(`DB problem: ${error}`));
 });
