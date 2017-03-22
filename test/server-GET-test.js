@@ -3,10 +3,13 @@ const assert = require('assert');
 const request = require('request');
 const app = require('../server');
 const fixtures = require('./fixtures');
-const configuration = require('../knexfile')['test'];
+const environment = process.env.NODE_ENV || 'test'
+const configuration = require('../knexfile')[environment];
 const database = require('knex')(configuration);
 
 describe('Server', () => {
+  let dbFoods;
+
   before(done => {
     this.port = process.env.TEST_PORT;
     this.server = app.listen(this.port, (err, result) => {
@@ -24,25 +27,24 @@ describe('Server', () => {
   });
 
   beforeEach(done => {
-    const foods = fixtures.foods.filter(food => food !== null);
-    database.raw(
-      `INSERT INTO foods (name, calories, created_at, updated_at)
-      VALUES (?, ?, ?, ?)`,
-      [foods[0].name, foods[0].calories, new Date(), new Date()]
-    ).then(database.raw(
-        `INSERT INTO foods (name, calories, created_at, updated_at)
-        VALUES (?, ?, ?, ?)`,
-        [foods[1].name, foods[1].calories, new Date(), new Date()]
-    ).then(database.raw(
-        `INSERT INTO foods (name, calories, created_at, updated_at)
-        VALUES (?, ?, ?, ?)`,
-        [foods[2].name, foods[2].calories, new Date(), new Date()]
-    ).then(() => done())));
+    const foods = fixtures.foods;
+    Promise.all(
+      foods.map( food => {
+        return database.raw(
+          `INSERT INTO foods (name, calories, created_at, updated_at)
+          VALUES (?,?,?,?)`,
+          [ food.name, food.calories, new Date(), new Date() ]
+        );
+      })
+    )
+    .then(() => done())
+    .catch(done)
   });
 
   afterEach(done => {
     database.raw('TRUNCATE foods RESTART IDENTITY')
-    .then(() => done());
+    .then(() => done())
+    .catch(done);
   });
 
   after(() => {
@@ -70,63 +72,57 @@ describe('Server', () => {
   });
 
   describe('GET /foods', () => {
-    beforeEach(() => {
-      app.locals.foods = fixtures.foods
-    });
-
     it('returns all foods', done =>{
-      let dbFoods;
-      database('foods').select()
-      .then(foods => {
-        dbFoods = foods;
-      })
-      .catch(error => console.error(`DB problem: ${error}`));
+      const getFoods = foods => {
+        const dbFoods = foods.rows;
 
-      this.request.get('/foods', (error, response) => {
-        if (error) { done(error); }
+        this.request.get('/foods', (error, response) => {
+          if (error) { done(error); }
 
-        const foods = JSON.parse(response.body);
-        const food = foods[0];
-
-        const id = dbFoods[0].id;
-        const name = dbFoods[0].name;
-        const calories = dbFoods[0].calories;
-
-        assert.equal(food.id, id);
-        assert.equal(food.name, name);
-        assert.equal(food.calories, calories);
-        done();
-      });
+          dbFoods.map(food => food.name).forEach(name => {
+            assert(response.body.includes(name));
+          });
+          done();
+        });
+      }
+      database.raw('SELECT * FROM foods')
+      .then(getFoods)
+      .catch(done);
     });
   });
 
   describe('GET /foods/:id', () => {
-    let foods;
-
-    beforeEach(() => {
-      foods = fixtures.foods;
-      app.locals.foods = foods;
-    });
-
     it('returns the specific food', done =>{
-      const food = foods.filter(food => food !== null)[0];
-      const foodId = foods.indexOf(food);
+      const getFood = rows => {
+        const dbFood = rows[0];
+        this.request.get(`/foods/${dbFood.id}`, (error, response) => {
+          if (error) { done(error); }
 
-      this.request.get(`/foods/${foodId}`, (error, response) => {
-        if (error) { done(error); }
-        assert(
-          response.body.includes(JSON.stringify(food)),
-          `${JSON.stringify(food)} not found in ${response.body}`
-        );
-        done();
-      });
+          const food = JSON.parse(response.body);
+
+          const id = dbFood.id
+          const name = dbFood.name;
+          const calories = dbFood.calories;
+
+          assert.equal(food.id, id);
+          assert.equal(food.name, name);
+          assert.equal(food.calories, calories);
+          done();
+        });
+      }
+
+      database.raw('SELECT * FROM foods')
+      .then(foods => { return foods.rows; })
+      .then(getFood)
+      .catch(done);
     });
 
     it('returns a 404 if id not found', done => {
-      const foodId = 3;
+      const foodId = 4;
 
       this.request.get(`/foods/${foodId}`, (error, response) => {
         if (error) { done(error); }
+
         assert.equal(response.statusCode, 404);
         done();
       });

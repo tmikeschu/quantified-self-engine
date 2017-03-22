@@ -31,42 +31,76 @@ app.post('/api/v1/foods', (request, response) => {
   const food = request.body.food;
   if (!food) { return response.sendStatus(400) }
 
-  app.locals.foods.push(food);
-  const foodId = app.locals.foods.length - 1;
-
-  response.redirect(`/foods/${foodId}`);
+  database.raw(
+    `INSERT INTO foods (name, calories, created_at, updated_at)
+    VALUES (?,?,?,?)`,
+    [ food.name, food.calories, new Date(), new Date() ]
+  )
+  .then((foods) => {
+    database.raw('SELECT * FROM foods')
+    .then(foods => {
+      const newFood = foods.rows[foods.rows.length - 1];
+      response.redirect(`/foods/${newFood.id}`);
+    })
+    .catch(error => console.error(`DB problem: ${error}`));
+  })
+  .catch(error => console.error(`DB problem: ${error}`));
 });
 
 app.get('/api/v1/foods/:id', (request, response) => {
-  const id = request.params.id;
-  const food = app.locals.foods[id];
-
-  if (!food) { return response.sendStatus(404); }
-  response.json(food);
+  database.raw('SELECT * FROM foods WHERE id=?', [request.params.id])
+  .then(foods => {
+    const food = foods.rows[0];
+    if (!food) { return response.sendStatus(404); }
+    response.json(foods.rows[0]);
+  })
+  .catch(error => console.error(`DB problem: ${error}`));
 });
 
 app.patch('/api/v1/foods/:id', (request, response) => {
   const id = request.params.id;
-  const dbFood = app.locals.foods[id];
   const requestFood = request.body.food;
-
-  if (!dbFood) { return response.sendStatus(404) }
   if (!requestFood) { return response.sendStatus(400) }
 
-  Object.keys(requestFood).forEach(attr => {
-    dbFood[attr] = requestFood[attr]
-  });
-  response.redirect(`/foods/${id}`);
+  database.raw('SELECT * FROM foods WHERE id = ?', [id])
+  .then(foods => {
+    food = foods.rows[0];
+    if (!food) { return response.sendStatus(404); }
+
+    database.raw(
+      `UPDATE foods
+      SET name = ?, calories = ?, updated_at = ?
+      WHERE id = ?`,
+      [
+        requestFood.name || food.name,
+        requestFood.calories || food.calories,
+        new Date(),
+        id
+      ]
+    )
+    .then((stuff) => {
+      response.redirect(`/foods/${id}`);
+    })
+    .catch(error => console.error(error));
+  })
+  .catch(error => console.error(`DB problem: ${error}`));
 });
 
 app.delete('/api/v1/foods/:id', (request, response) => {
   const id = request.params.id;
-  const food = app.locals.foods[id];
+  let food;
 
-  if (!food) { return response.sendStatus(404); }
-
-  app.locals.foods[id] = null;
-  response.redirect(202, '/foods');
+  database.raw('SELECT * FROM foods WHERE id = ?', [id])
+  .then(foods => {
+    food = foods.rows[0];
+    if (!food) { return response.sendStatus(404); }
+    database.raw('DELETE FROM foods where id = ?', [id])
+    .then(() => {
+      response.redirect(202, '/foods');
+    })
+    .catch(error => console.error(error));
+  })
+  .catch(error => console.error(`DB problem: ${error}`));
 });
 
 app.locals.routes = app._router.stack
