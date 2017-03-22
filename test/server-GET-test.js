@@ -3,9 +3,11 @@ const assert = require('assert');
 const request = require('request');
 const app = require('../server');
 const fixtures = require('./fixtures');
+const configuration = require('../knexfile')['test'];
+const database = require('knex')(configuration);
 
 describe('Server', () => {
-  before((done) => {
+  before(done => {
     this.port = process.env.TEST_PORT;
     this.server = app.listen(this.port, (err, result) => {
       if (err) { done(err) }
@@ -19,6 +21,22 @@ describe('Server', () => {
     this.rootRequest = request.defaults({
       baseUrl: `http://localhost:${process.env.TEST_PORT}`
     });
+  });
+
+  beforeEach(done => {
+    Object.keys(fixtures.foods).forEach(food => {
+      database.raw(
+        `INSERT INTO foods (name, calories, created_at, updated_at)
+        VALUES (?, ?, ?, ?)`,
+        [food.name, food.calories, new Date(), new Date()]
+      );
+    });
+    done();
+  });
+
+  afterEach(done => {
+    database.raw('TRUNCATE foods RESTART IDENTITY')
+    .then(() => done());
   });
 
   after(() => {
