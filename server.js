@@ -17,11 +17,11 @@ app.get('/', (request, response) => {
   response.render('index');
 });
 
-app.get('/foods', (request, response) => {
+app.get('/api/v1/foods', (request, response) => {
   response.json(app.locals.foods);
 });
 
-app.post('/foods', (request, response) => {
+app.post('/api/v1/foods', (request, response) => {
   const food = request.body.food;
   if (!food) { return response.sendStatus(400) }
 
@@ -31,7 +31,7 @@ app.post('/foods', (request, response) => {
   response.redirect(`/foods/${foodId}`);
 });
 
-app.get('/foods/:id', (request, response) => {
+app.get('/api/v1/foods/:id', (request, response) => {
   const id = request.params.id;
   const food = app.locals.foods[id];
 
@@ -39,7 +39,7 @@ app.get('/foods/:id', (request, response) => {
   response.json(food);
 });
 
-app.patch('/foods/:id', (request, response) => {
+app.patch('/api/v1/foods/:id', (request, response) => {
   const id = request.params.id;
   const dbFood = app.locals.foods[id];
   const requestFood = request.body.food;
@@ -53,7 +53,7 @@ app.patch('/foods/:id', (request, response) => {
   response.redirect(`/foods/${id}`);
 });
 
-app.delete('/foods/:id', (request, response) => {
+app.delete('/api/v1/foods/:id', (request, response) => {
   const id = request.params.id;
   const food = app.locals.foods[id];
 
