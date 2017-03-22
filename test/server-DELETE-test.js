@@ -19,15 +19,14 @@ describe('Server', () => {
 
   after(() => {
     this.server.close();
-    app.locals.foods = fixtures.foods;
   });
 
   describe('DELETE /foods/:id', () => {
     let foods;
 
     beforeEach(() => {
-      foods = fixtures.foods;
-      app.locals.foods = require('./fixtures').foods;
+      app.locals.foods = fixtures.foods.map(food => food);
+      foods = app.locals.foods;
     });
 
     it('returns a 404 if id is not found', (done) => {
