@@ -106,7 +106,10 @@ app.delete('/api/v1/foods/:id', (request, response) => {
 app.locals.routes = app._router.stack
                       .map(layer => layer.route)
                       .filter(route => route !== undefined)
-                      .map(route => route.path);
+                      .map(route => {
+                        const verb = Object.keys(route.methods)[0]
+                        return `${verb.toUpperCase()} - ${route.path}`
+                      });
 
 if (!module.parent) {
   app.listen(app.get('port'), () =>{
