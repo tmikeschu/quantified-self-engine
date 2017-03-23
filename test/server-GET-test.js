@@ -3,13 +3,9 @@ const assert = require('assert');
 const request = require('request');
 const app = require('../server');
 const fixtures = require('./fixtures');
-const environment = process.env.NODE_ENV || 'test'
-const configuration = require('../knexfile')[environment];
-const database = require('knex')(configuration);
+const Food = require('../lib/models/food');
 
 describe('Server', () => {
-  let dbFoods;
-
   before(done => {
     this.port = process.env.TEST_PORT;
     this.server = app.listen(this.port, (err, result) => {
@@ -29,21 +25,14 @@ describe('Server', () => {
   beforeEach(done => {
     const foods = fixtures.foods;
     Promise.all(
-      foods.map( food => {
-        return database.raw(
-          `INSERT INTO foods (name, calories, created_at, updated_at)
-          VALUES (?,?,?,?)`,
-          [ food.name, food.calories, new Date(), new Date() ]
-        );
-      })
+     foods.map(Food.create)
     )
     .then(() => done())
     .catch(done)
   });
 
   afterEach(done => {
-    database.raw('TRUNCATE foods RESTART IDENTITY')
-    .then(() => done())
+    Food.clear().then(() => done())
     .catch(done);
   });
 
@@ -56,7 +45,10 @@ describe('Server', () => {
       const routes = app._router.stack
                       .map(layer => layer.route)
                       .filter(route => route !== undefined)
-                      .map(route => route.path);
+                      .map(route => {
+                        const verb = Object.keys(route.methods)[0]
+                        return `${verb.toUpperCase()} - ${route.path}`
+                      });
 
       this.rootRequest.get('/', (error, response) => {
         if (error) { done(error); }
@@ -85,16 +77,14 @@ describe('Server', () => {
           done();
         });
       }
-      database.raw('SELECT * FROM foods')
-      .then(getFoods)
-      .catch(done);
+      Food.all().then(getFoods).catch(done);
     });
   });
 
   describe('GET /foods/:id', () => {
     it('returns the specific food', done =>{
-      const getFood = rows => {
-        const dbFood = rows[0];
+      const getFood = foods => {
+        const dbFood = foods.rows[0];
         this.request.get(`/foods/${dbFood.id}`, (error, response) => {
           if (error) { done(error); }
 
@@ -111,10 +101,7 @@ describe('Server', () => {
         });
       }
 
-      database.raw('SELECT * FROM foods')
-      .then(foods => { return foods.rows; })
-      .then(getFood)
-      .catch(done);
+      Food.all().then(getFood).catch(done);
     });
 
     it('returns a 404 if id not found', done => {
