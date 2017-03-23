@@ -5,9 +5,18 @@ head
   meta(name="viewport", content="width=device-width, initial-scale=1.0")
   meta(http-equiv="X-UA-Compatible", content="ie=edge")
   title= title
+  style(type='text/css').
+    body {
+      width: 90%;
+      margin: 0 auto;
+      font-family: sans-serif
+    }
+    ul {
+      list-style-type: none;
+    }
 body
   h2= title
-  h3 Endpoints
+  h3 Endpoints:
   ul
     each route in routes
       li= route
